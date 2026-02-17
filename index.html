@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily KPI Tracker</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <script src="/_sdk/data_sdk.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { font-family: 'Space Grotesk', sans-serif; }
+    
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 20px rgba(16, 185, 129, 0.4); }
+      50% { box-shadow: 0 0 40px rgba(16, 185, 129, 0.8); }
+    }
+    
+    @keyframes confetti {
+      0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(-100px) rotate(720deg); opacity: 0; }
+    }
+    
+    @keyframes bounce-in {
+      0% { transform: scale(0); }
+      50% { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+    
+    .goal-complete { animation: pulse-glow 2s ease-in-out infinite; }
+    .checkpoint-unlocked { animation: bounce-in 0.5s ease-out; }
+    
+    .progress-ring { transition: stroke-dashoffset 0.5s ease-out; }
+    
+    .glass-card {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+  </style>
+</head>
+<body class="h-full">
+  <div id="app" class="min-h-full bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white p-4 md:p-8 overflow-auto">
+    
+    <!-- Header -->
+    <header class="text-center mb-8">
+      <h1 id="main-title" class="text-3xl md:text-5xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent mb-2">Daily KPI Tracker</h1>
+      <p id="motivation-text" class="text-purple-300 text-lg">You've got this! 💪</p>
+      <p id="date-display" class="text-slate-400 mt-2"></p>
+    </header>
+
+    <!-- Main Stats Grid -->
+    <div class="max-w-4xl mx-auto grid md:grid-cols-2 gap-6 mb-8">
+      
+      <!-- Dials Card -->
+      <div id="dials-card" class="glass-card rounded-3xl p-6 relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-500/20 rounded-full blur-3xl"></div>
+        
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 class="text-slate-300 text-sm uppercase tracking-wider">Dials</h2>
+            <div class="flex items-baseline gap-2">
+              <span id="dials-count" class="text-5xl font-bold text-emerald-400">0</span>
+              <span class="text-slate-400">/ 80</span>
+            </div>
+          </div>
+          
+          <!-- Circular Progress -->
+          <div class="relative w-24 h-24">
+            <svg class="w-24 h-24 transform -rotate-90">
+              <circle cx="48" cy="48" r="40" stroke="#334155" stroke-width="8" fill="none"/>
+              <circle id="dials-progress" class="progress-ring" cx="48" cy="48" r="40" stroke="#10b981" stroke-width="8" fill="none" stroke-linecap="round" stroke-dasharray="251.2" stroke-dashoffset="251.2"/>
+            </svg>
+            <span id="dials-percent" class="absolute inset-0 flex items-center justify-center text-lg font-bold">0%</span>
+          </div>
+        </div>
+        
+        <!-- Dial Controls -->
+        <div class="flex gap-3 mt-4">
+          <button id="dial-minus" class="flex-1 py-3 px-4 bg-slate-700/50 hover:bg-slate-600/50 rounded-xl font-semibold transition-all active:scale-95">
+            − 1
+          </button>
+          <button id="dial-plus" class="flex-1 py-3 px-4 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold transition-all active:scale-95 shadow-lg shadow-emerald-500/30">
+            + 1
+          </button>
+          <button id="dial-plus-5" class="flex-1 py-3 px-4 bg-emerald-700 hover:bg-emerald-600 rounded-xl font-semibold transition-all active:scale-95">
+            + 5
+          </button>
+        </div>
+      </div>
+
+      <!-- Talk Time Card -->
+      <div id="talk-card" class="glass-card rounded-3xl p-6 relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-32 h-32 bg-cyan-500/20 rounded-full blur-3xl"></div>
+        
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 class="text-slate-300 text-sm uppercase tracking-wider">Talk Time</h2>
+            <div class="flex items-baseline gap-2">
+              <span id="talk-display" class="text-5xl font-bold text-cyan-400">0:00</span>
+              <span class="text-slate-400">/ 2:00</span>
+            </div>
+          </div>
+          
+          <!-- Circular Progress -->
+          <div class="relative w-24 h-24">
+            <svg class="w-24 h-24 transform -rotate-90">
+              <circle cx="48" cy="48" r="40" stroke="#334155" stroke-width="8" fill="none"/>
+              <circle id="talk-progress" class="progress-ring" cx="48" cy="48" r="40" stroke="#06b6d4" stroke-width="8" fill="none" stroke-linecap="round" stroke-dasharray="251.2" stroke-dashoffset="251.2"/>
+            </svg>
+            <span id="talk-percent" class="absolute inset-0 flex items-center justify-center text-lg font-bold">0%</span>
+          </div>
+        </div>
+        
+        <!-- Talk Time Controls -->
+        <div class="flex gap-3 mt-4">
+          <button id="talk-minus" class="flex-1 py-3 px-4 bg-slate-700/50 hover:bg-slate-600/50 rounded-xl font-semibold transition-all active:scale-95">
+            − 5m
+          </button>
+          <button id="talk-plus-5" class="flex-1 py-3 px-4 bg-cyan-600 hover:bg-cyan-500 rounded-xl font-semibold transition-all active:scale-95 shadow-lg shadow-cyan-500/30">
+            + 5m
+          </button>
+          <button id="talk-plus-15" class="flex-1 py-3 px-4 bg-cyan-700 hover:bg-cyan-600 rounded-xl font-semibold transition-all active:scale-95">
+            + 15m
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Checkpoints Section -->
+    <div class="max-w-4xl mx-auto mb-8">
+      <h3 class="text-xl font-bold text-center mb-4 text-slate-300">🏆 Checkpoints</h3>
+      
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-3" id="checkpoints-container">
+        <!-- Checkpoints will be rendered here -->
+      </div>
+    </div>
+
+    <!-- Achievement Banner -->
+    <div id="achievement-banner" class="max-w-4xl mx-auto hidden">
+      <div class="glass-card rounded-3xl p-8 text-center goal-complete">
+        <div class="text-6xl mb-4">🎉</div>
+        <h2 class="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent mb-2">GOAL ACHIEVED!</h2>
+        <p class="text-slate-300">You crushed it today! Time to celebrate! 🚀</p>
+      </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="max-w-4xl mx-auto mt-8">
+      <div class="glass-card rounded-2xl p-4 flex justify-around text-center">
+        <div>
+          <p class="text-slate-400 text-sm">Dials to Go</p>
+          <p id="dials-remaining" class="text-2xl font-bold text-emerald-400">80</p>
+        </div>
+        <div class="border-l border-slate-600"></div>
+        <div>
+          <p class="text-slate-400 text-sm">Time to Go</p>
+          <p id="time-remaining" class="text-2xl font-bold text-cyan-400">2:00</p>
+        </div>
+        <div class="border-l border-slate-600"></div>
+        <div>
+          <p class="text-slate-400 text-sm">Overall</p>
+          <p id="overall-percent" class="text-2xl font-bold text-purple-400">0%</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reset Button -->
+    <div class="max-w-4xl mx-auto mt-6 text-center">
+      <button id="reset-btn" class="px-6 py-2 bg-slate-700/50 hover:bg-red-600/50 rounded-xl text-slate-300 hover:text-white transition-all text-sm">
+        Reset Today's Progress
+      </button>
+      <div id="reset-confirm" class="hidden mt-2 space-x-2">
+        <span class="text-slate-400 text-sm">Are you sure?</span>
+        <button id="reset-yes" class="px-4 py-1 bg-red-600 hover:bg-red-500 rounded-lg text-sm transition-all">Yes, Reset</button>
+        <button id="reset-no" class="px-4 py-1 bg-slate-600 hover:bg-slate-500 rounded-lg text-sm transition-all">Cancel</button>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const DIAL_GOAL = 80;
+    const TALK_GOAL_MINUTES = 120;
+    const CIRCUMFERENCE = 251.2;
+
+    const checkpoints = [
+      { id: 1, name: "Warm Up", dialTarget: 16, talkTarget: 24, emoji: "🔥" },
+      { id: 2, name: "Getting Hot", dialTarget: 32, talkTarget: 48, emoji: "⚡" },
+      { id: 3, name: "Halfway!", dialTarget: 40, talkTarget: 60, emoji: "🌟" },
+      { id: 4, name: "On Fire", dialTarget: 64, talkTarget: 96, emoji: "🚀" },
+      { id: 5, name: "Champion!", dialTarget: 80, talkTarget: 120, emoji: "👑" }
+    ];
+
+    const defaultConfig = {
+      main_title: "Daily KPI Tracker",
+      motivation_message: "You've got this! 💪",
+      background_color: "#0f172a",
+      accent_color: "#10b981",
+      text_color: "#ffffff",
+      secondary_color: "#06b6d4",
+      card_color: "#1e293b"
+    };
+
+    let currentData = null;
+    let allRecords = [];
+
+    function getTodayDate() {
+      return new Date().toISOString().split('T')[0];
+    }
+
+    function formatTime(minutes) {
+      const hrs = Math.floor(minutes / 60);
+      const mins = minutes % 60;
+      return `${hrs}:${mins.toString().padStart(2, '0')}`;
+    }
+
+    function updateUI() {
+      const dials = currentData ? currentData.dials : 0;
+      const talkMins = currentData ? currentData.talk_minutes : 0;
+
+      document.getElementById('dials-count').textContent = dials;
+      document.getElementById('talk-display').textContent = formatTime(talkMins);
+
+      const dialPercent = Math.min(100, Math.round((dials / DIAL_GOAL) * 100));
+      const talkPercent = Math.min(100, Math.round((talkMins / TALK_GOAL_MINUTES) * 100));
+      const overallPercent = Math.round((dialPercent + talkPercent) / 2);
+
+      document.getElementById('dials-percent').textContent = `${dialPercent}%`;
+      document.getElementById('talk-percent').textContent = `${talkPercent}%`;
+      document.getElementById('overall-percent').textContent = `${overallPercent}%`;
+
+      const dialOffset = CIRCUMFERENCE - (dialPercent / 100) * CIRCUMFERENCE;
+      const talkOffset = CIRCUMFERENCE - (talkPercent / 100) * CIRCUMFERENCE;
+      document.getElementById('dials-progress').style.strokeDashoffset = dialOffset;
+      document.getElementById('talk-progress').style.strokeDashoffset = talkOffset;
+
+      document.getElementById('dials-remaining').textContent = Math.max(0, DIAL_GOAL - dials);
+      document.getElementById('time-remaining').textContent = formatTime(Math.max(0, TALK_GOAL_MINUTES - talkMins));
+
+      const dialsCard = document.getElementById('dials-card');
+      const talkCard = document.getElementById('talk-card');
+      
+      if (dials >= DIAL_GOAL) {
+        dialsCard.classList.add('goal-complete');
+      } else {
+        dialsCard.classList.remove('goal-complete');
+      }
+      
+      if (talkMins >= TALK_GOAL_MINUTES) {
+        talkCard.classList.add('goal-complete');
+      } else {
+        talkCard.classList.remove('goal-complete');
+      }
+
+      renderCheckpoints(dials, talkMins);
+
+      const banner = document.getElementById('achievement-banner');
+      if (dials >= DIAL_GOAL && talkMins >= TALK_GOAL_MINUTES) {
+        banner.classList.remove('hidden');
+      } else {
+        banner.classList.add('hidden');
+      }
+    }
+
+    function renderCheckpoints(dials, talkMins) {
+      const container = document.getElementById('checkpoints-container');
+      container.innerHTML = '';
+
+      checkpoints.forEach(cp => {
+        const dialMet = dials >= cp.dialTarget;
+        const talkMet = talkMins >= cp.talkTarget;
+        const unlocked = dialMet && talkMet;
+
+        const div = document.createElement('div');
+        div.className = `glass-card rounded-xl p-3 text-center transition-all ${unlocked ? 'checkpoint-unlocked border-emerald-500/50' : 'opacity-50'}`;
+        div.innerHTML = `
+          <div class="text-2xl mb-1">${unlocked ? cp.emoji : '🔒'}</div>
+          <p class="text-xs font-semibold ${unlocked ? 'text-emerald-400' : 'text-slate-400'}">${cp.name}</p>
+          <p class="text-xs text-slate-500">${cp.dialTarget}d / ${formatTime(cp.talkTarget)}</p>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    async function updateData(dials, talkMinutes) {
+      dials = Math.max(0, dials);
+      talkMinutes = Math.max(0, talkMinutes);
+
+      if (currentData) {
+        currentData.dials = dials;
+        currentData.talk_minutes = talkMinutes;
+        const result = await window.dataSdk.update(currentData);
+        if (!result.isOk) {
+          console.error('Failed to update data');
+        }
+      } else {
+        if (allRecords.length >= 999) {
+          return;
+        }
+        const result = await window.dataSdk.create({
+          date: getTodayDate(),
+          dials: dials,
+          talk_minutes: talkMinutes
+        });
+        if (!result.isOk) {
+          console.error('Failed to create data');
+        }
+      }
+    }
+
+    const dataHandler = {
+      onDataChanged(data) {
+        allRecords = data;
+        const today = getTodayDate();
+        currentData = data.find(d => d.date === today) || null;
+        updateUI();
+      }
+    };
+
+    function applyConfig(config) {
+      document.getElementById('main-title').textContent = config.main_title || defaultConfig.main_title;
+      document.getElementById('motivation-text').textContent = config.motivation_message || defaultConfig.motivation_message;
+      
+      document.body.querySelector('#app').style.background = `linear-gradient(135deg, ${config.background_color || defaultConfig.background_color}, #581c87, ${config.background_color || defaultConfig.background_color})`;
+    }
+
+    async function init() {
+      document.getElementById('date-display').textContent = new Date().toLocaleDateString('en-US', { 
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+      });
+
+      if (window.elementSdk) {
+        await window.elementSdk.init({
+          defaultConfig,
+          onConfigChange: async (config) => {
+            applyConfig(config);
+          },
+          mapToCapabilities: (config) => ({
+            recolorables: [
+              {
+                get: () => config.background_color || defaultConfig.background_color,
+                set: (v) => window.elementSdk.setConfig({ background_color: v })
+              },
+              {
+                get: () => config.card_color || defaultConfig.card_color,
+                set: (v) => window.elementSdk.setConfig({ card_color: v })
+              },
+              {
+                get: () => config.text_color || defaultConfig.text_color,
+                set: (v) => window.elementSdk.setConfig({ text_color: v })
+              },
+              {
+                get: () => config.accent_color || defaultConfig.accent_color,
+                set: (v) => window.elementSdk.setConfig({ accent_color: v })
+              },
+              {
+                get: () => config.secondary_color || defaultConfig.secondary_color,
+                set: (v) => window.elementSdk.setConfig({ secondary_color: v })
+              }
+            ],
+            borderables: [],
+            fontEditable: undefined,
+            fontSizeable: undefined
+          }),
+          mapToEditPanelValues: (config) => new Map([
+            ["main_title", config.main_title || defaultConfig.main_title],
+            ["motivation_message", config.motivation_message || defaultConfig.motivation_message]
+          ])
+        });
+      }
+
+      if (window.dataSdk) {
+        await window.dataSdk.init(dataHandler);
+      }
+
+      document.getElementById('dial-plus').addEventListener('click', () => {
+        const newDials = (currentData?.dials || 0) + 1;
+        updateData(newDials, currentData?.talk_minutes || 0);
+      });
+
+      document.getElementById('dial-plus-5').addEventListener('click', () => {
+        const newDials = (currentData?.dials || 0) + 5;
+        updateData(newDials, currentData?.talk_minutes || 0);
+      });
+
+      document.getElementById('dial-minus').addEventListener('click', () => {
+        const newDials = (currentData?.dials || 0) - 1;
+        updateData(newDials, currentData?.talk_minutes || 0);
+      });
+
+      document.getElementById('talk-plus-5').addEventListener('click', () => {
+        const newTalk = (currentData?.talk_minutes || 0) + 5;
+        updateData(currentData?.dials || 0, newTalk);
+      });
+
+      document.getElementById('talk-plus-15').addEventListener('click', () => {
+        const newTalk = (currentData?.talk_minutes || 0) + 15;
+        updateData(currentData?.dials || 0, newTalk);
+      });
+
+      document.getElementById('talk-minus').addEventListener('click', () => {
+        const newTalk = (currentData?.talk_minutes || 0) - 5;
+        updateData(currentData?.dials || 0, newTalk);
+      });
+
+      document.getElementById('reset-btn').addEventListener('click', () => {
+        document.getElementById('reset-btn').classList.add('hidden');
+        document.getElementById('reset-confirm').classList.remove('hidden');
+      });
+
+      document.getElementById('reset-no').addEventListener('click', () => {
+        document.getElementById('reset-btn').classList.remove('hidden');
+        document.getElementById('reset-confirm').classList.add('hidden');
+      });
+
+      document.getElementById('reset-yes').addEventListener('click', async () => {
+        if (currentData) {
+          await window.dataSdk.delete(currentData);
+          currentData = null;
+        }
+        document.getElementById('reset-btn').classList.remove('hidden');
+        document.getElementById('reset-confirm').classList.add('hidden');
+        updateUI();
+      });
+
+      updateUI();
+    }
+
+    init();
+  </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9cf8c01e900b001d',t:'MTc3MTM2NzY0OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
